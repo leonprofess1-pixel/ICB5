@@ -47,10 +47,27 @@ class ReportGenerator:
             self.analysis_7_correlation_heatmap,
             self.analysis_8_education_income_attrition,
             self.analysis_9_waterfall_chart,
+            self.analysis_11_performance_attrition, # 신규 추가
             self.analysis_10_attrition_overview,
         ]
         
-        for i, method in enumerate(analysis_methods):
+        # 순서 재정렬 및 실행
+        analysis_map = {method.__name__: method for method in analysis_methods}
+        ordered_methods = [
+            analysis_map['analysis_1_income_satisfaction_attrition'],
+            analysis_map['analysis_2_jobrole_income_attrition'],
+            analysis_map['analysis_3_age_workyears_attrition'],
+            analysis_map['analysis_4_promotion_joblevel_attrition'],
+            analysis_map['analysis_5_satisfaction_scores'],
+            analysis_map['analysis_6_travel_income_attrition'],
+            analysis_map['analysis_7_correlation_heatmap'],
+            analysis_map['analysis_8_education_income_attrition'],
+            analysis_map['analysis_9_waterfall_chart'],
+            analysis_map['analysis_11_performance_attrition'],
+            analysis_map['analysis_10_attrition_overview'],
+        ]
+
+        for i, method in enumerate(ordered_methods):
             title, obs, insight, action, fig_name = method()
             self.add_section(i + 1, title, obs, insight, action, fig_name)
             plt.close('all')
@@ -60,7 +77,11 @@ class ReportGenerator:
 
     def add_section(self, number, title, observation, insight, action_plan, fig_name):
         self.report_content += f"## {number}. {title}\n\n"
-        self.report_content += f"![{title}](./images_v2/{fig_name})\n\n"
+        
+        # Check if fig_name is not empty and file exists
+        if fig_name and os.path.exists(os.path.join(self.img_dir, fig_name)):
+            self.report_content += f"![{title}](./images_v2/{fig_name})\n\n"
+
         self.report_content += "### 🔍 관찰 (Observation)\n"
         self.report_content += f"{observation}\n\n"
         self.report_content += "### 💡 인사이트 (Insight)\n"
@@ -93,15 +114,11 @@ class ReportGenerator:
         footer = """
 ## 종합 제언 (Comprehensive Recommendations)
 
-분석 결과를 바탕으로, 저연차 Sales 직원의 성공적인 조직 안착과 장기 근속을 유도하기 위한 종합적인 액션 플랜을 다음과 같이 제안합니다.
-
 | 영역 | 핵심 문제 | 우선순위 | 제안 액션 | 기대 효과 |
 |:---|:---|:---:|:---|:---|
 | **보상 및 인정** | `Sales Representative`의 낮은 급여, 성과 인정 부족 | **상** | - 초임 연봉 테이블 현실화 (시장 평균 이상) <br> - 입사 1~2년차 대상 성과 기반 인센티브 강화 | 단기 이탈률 감소, 우수 인재 유치 |
 | **성장 및 경력** | 불투명한 커리어 패스, 승진 정체 | **상** | - `Sales Rep.` -> `Sales Exec.` 성장 경로 명확화 <br> - 역량 기반의 조기 승진(Fast-Track) 제도 도입 | 동기 부여, 조직 내 성장 기대감 형성 |
 | **업무 환경 및 문화**| 낮은 업무/환경 만족도, 잦은 출장 | **중** | - 신규 입사자 대상 1:1 멘토링 프로그램 의무화 <br> - 출장 규정 재검토 및 원격/하이브리드 근무 유연성 확대 | 조직 적응 지원, 워라밸 개선 |
-
-위 제안들의 성공적인 실행을 통해 이탈률을 **향후 1년 내 15%p 이상 감소**시킬 수 있을 것으로 기대됩니다.
 """
         self.report_content += footer
         
@@ -184,12 +201,6 @@ class ReportGenerator:
         df_promo = self.df.copy()
         df_promo['승진경험'] = df_promo['YearsSinceLastPromotion'].apply(lambda x: '승진경험 없음' if x == 0 else '승진경험 있음')
         
-        plt.figure(figsize=(12, 8))
-        sns.countplot(data=df_promo, x='JobLevel', hue='Attrition_Kor', palette={'잔류': 'skyblue', '이탈': 'salmon'}, hue_order=['잔류', '이탈'], dodge=True)
-        plt.title(title, fontsize=18, pad=20)
-        plt.xlabel("직무 레벨", fontsize=12)
-        plt.ylabel("인원 수", fontsize=12)
-        
         # FacetGrid for more detail
         g = sns.catplot(data=df_promo, x='JobLevel', col='승진경험', hue='Attrition_Kor', kind='count', palette={'잔류': 'skyblue', '이탈': 'salmon'})
         g.fig.suptitle('승진 경험 유무에 따른 직무 레벨별 이탈 현황', y=1.03)
@@ -197,6 +208,7 @@ class ReportGenerator:
         plt.tight_layout()
         fig_name = "4_promotion_joblevel_attrition.png"
         g.savefig(os.path.join(self.img_dir, fig_name))
+        plt.close(g.fig) # close catplot figure explicitly
 
         obs = "- '승진경험 없음' 그룹에서 이탈자 비율이 압도적으로 높습니다. 특히 직무 레벨 1, 2에서 이러한 경향이 두드러집니다.\n- 반면, 단 한 번이라도 승진을 경험한('승진경험 있음') 그룹에서는 이탈자 수가 급격히 줄어듭니다."
         insight = "입사 후 3년 내에 승진 경험이 없는 것은 매우 강력한 이탈 신호입니다. 직원들은 자신의 성장이 정체되었다고 느끼며, 외부에서 인정과 보상을 받으려는 동기가 커집니다."
@@ -245,10 +257,13 @@ class ReportGenerator:
         fig_name = "7_correlation_heatmap.png"
 
         df_corr = self.df.copy()
-        # Convert categorical to numerical for correlation
         df_corr['Attrition_Num'] = df_corr['Attrition'].apply(lambda x: 1 if x == 'Yes' else 0)
-        numeric_cols = df_corr.select_dtypes(include=np.number).columns
+        numeric_cols = df_corr.select_dtypes(include=np.number).columns.tolist()
         
+        # PerformanceRating은 범주형으로 취급될 수 있으므로 상관관계 분석에서 제외하거나 주의
+        if 'PerformanceRating' in numeric_cols:
+            numeric_cols.remove('PerformanceRating')
+            
         plt.figure(figsize=(16, 12))
         corr_matrix = df_corr[numeric_cols].corr()
         sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=.5)
@@ -285,23 +300,37 @@ class ReportGenerator:
         title = "주요 요인에 따른 이탈 과정 (Waterfall Chart)"
         fig_name = "9_waterfall_chart.png"
 
+        # 데이터 준비
         total_employees = len(self.df)
+        retained_employees = len(self.df[self.df['Attrition'] == 'No'])
         
-        low_income_attrition = len(self.df[(self.df['MonthlyIncome'] < 3000) & (self.df['Attrition'] == 'Yes')])
-        low_satisfaction_attrition = len(self.df[(self.df['JobSatisfaction'] <= 2) & (self.df['Attrition'] == 'Yes') & ~(self.df['MonthlyIncome'] < 3000)])
-        no_promotion_attrition = len(self.df[(self.df['YearsSinceLastPromotion'] == 0) & (self.df['Attrition'] == 'Yes') & ~((self.df['JobSatisfaction'] <= 2) | (self.df['MonthlyIncome'] < 3000))])
-        other_attrition = total_employees - len(self.df[self.df['Attrition'] == 'Yes']) - low_income_attrition - low_satisfaction_attrition - no_promotion_attrition
+        # 이탈 요인별 규모 계산 (중복 제거)
+        df_yes = self.df[self.df['Attrition'] == 'Yes'].copy()
+        
+        low_income_mask = df_yes['MonthlyIncome'] < 3000
+        low_income_attrition = low_income_mask.sum()
+        
+        low_sat_mask = (df_yes['JobSatisfaction'] <= 2) & (~low_income_mask)
+        low_satisfaction_attrition = low_sat_mask.sum()
 
-        retained_employees = total_employees - len(self.df[self.df['Attrition'] == 'Yes'])
+        no_promo_mask = (df_yes['YearsSinceLastPromotion'] == 0) & (~low_income_mask) & (~low_sat_mask)
+        no_promotion_attrition = no_promo_mask.sum()
+        
+        other_attrition = len(df_yes) - low_income_attrition - low_satisfaction_attrition - no_promotion_attrition
+        
+        measures = ["absolute"] + ["relative"] * 4 + ["total"]
+        x_labels = ["전체 직원", "저소득 이탈", "낮은 만족도 이탈", "승진 누락 이탈", "기타 이탈", "잔류 직원"]
+        y_values = [total_employees, -low_income_attrition, -low_satisfaction_attrition, -no_promotion_attrition, -other_attrition, retained_employees]
+        text_values = [f"{v}" for v in y_values]
+        text_values[0] = f"{total_employees}"
+        text_values[-1] = f"{retained_employees}"
+
 
         fig = go.Figure(go.Waterfall(
-            name = "Attrition Analysis",
-            orientation = "v",
-            measure = ["absolute", "relative", "relative", "relative", "relative", "total"],
-            x = ["전체 직원", "저소득 이탈", "낮은 만족도 이탈", "승진 누락 이탈", "기타 이탈", "잔류 직원"],
-            textposition = "outside",
-            text = [str(total_employees), str(-low_income_attrition), str(-low_satisfaction_attrition), str(-no_promotion_attrition), str(-other_attrition), str(retained_employees)],
-            y = [total_employees, -low_income_attrition, -low_satisfaction_attrition, -no_promotion_attrition, -other_attrition, retained_employees],
+            name = "Attrition Analysis", orientation = "v",
+            measure = measures,
+            x = x_labels, textposition = "outside",
+            text = text_values, y = y_values,
             connector = {"line":{"color":"rgb(63, 63, 63)"}},
         ))
 
@@ -312,20 +341,62 @@ class ReportGenerator:
         insight = "이탈은 복합적인 요인에 의해 발생하지만, '경제적 보상'이 가장 우선적인 해결 과제임을 명확히 보여줍니다. 보상 문제를 해결하지 않고 다른 정책(만족도 향상 등)을 펴는 것은 효과가 제한적일 수 있습니다."
         action = "- **(전략) 이탈 방지 예산 배정 시, 보상 관련 항목에 최우선 순위를 부여합니다.** 성과 관리, 조직 문화 개선도 중요하지만, 가장 시급한 '출혈'부터 막는다는 관점에서 접근해야 합니다."
         return title, obs, insight, action, fig_name
+        
+    def analysis_11_performance_attrition(self):
+        title = "성과 등급과 이탈률의 관계"
+        fig_name = "11_performance_rating_attrition.png"
+
+        # 성과 등급별 이탈률 계산
+        perf_attrition = self.df.groupby('PerformanceRating')['Attrition_Num'].value_counts(normalize=True).unstack().fillna(0)
+        if 1 in perf_attrition.columns:
+            perf_attrition['AttritionRate'] = perf_attrition[1] * 100
+        else: # 이탈자가 없는 경우
+             perf_attrition['AttritionRate'] = 0
+
+        perf_attrition = perf_attrition.reset_index()
+        
+        # 시각화
+        plt.figure(figsize=(10, 7))
+        ax = sns.barplot(data=perf_attrition, x='PerformanceRating', y='AttritionRate', palette="viridis")
+
+        plt.title(title, fontsize=18, pad=20)
+        plt.xlabel("성과 등급", fontsize=12)
+        plt.ylabel("이탈률 (%)", fontsize=12)
+        plt.ylim(0, 100)
+
+        # 막대 위에 이탈률 % 표시
+        for p in ax.patches:
+            height = p.get_height()
+            ax.text(p.get_x() + p.get_width() / 2., height + 1, f'{height:.1f}%', ha="center", fontsize=12)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.img_dir, fig_name))
+
+        obs = "- 성과 등급 3(Excellent)과 4(Outstanding) 모두에서 이탈률이 약 33~34%로 나타나, 두 그룹 간에 유의미한 차이가 없습니다.\n- 절대적인 이탈자 수는 성과 등급 3에서 훨씬 많지만, 이는 해당 등급에 직원이 집중되어 있기 때문입니다."
+        insight = "성과 등급이 이탈률에 거의 영향을 주지 못하고 있습니다. 이는 현재의 성과 평가 시스템이 직원들의 실제 기여도를 제대로 반영하지 못하거나, 혹은 '우수' 인재로 평가받는 직원들조차 조직에 만족하지 못하고 이탈하고 있음을 시사하는 심각한 신호입니다. 즉, 성과 관리가 인재 유지(Retention) 기능에 실패하고 있습니다."
+        action = "- **(최우선) 성과 평가 시스템 전면 재검토:** 현재 평가 지표가 실질적인 성과와 동기부여에 기여하는지 원점에서 재검토해야 합니다. 특히, 상위 평가 등급(4등급)에 대한 차별화된 보상 및 인정 프로그램을 즉시 강화해야 합니다.\n- **(단기) '우수' 인재 심층 면담:** 성과 등급 4점을 받은 이탈자 및 잔류자를 대상으로 심층 인터뷰를 진행하여, 무엇이 그들의 이탈을 고민하게 만드는지 핵심 동인을 파악해야 합니다."
+        return title, obs, insight, action, fig_name
 
     def analysis_10_attrition_overview(self):
         title = "전체 이탈 현황 요약"
         fig_name = "10_attrition_overview.png"
         
         attrition_counts = self.df['Attrition_Kor'].value_counts()
+        total_count = len(self.df)
+        attrition_rate = (attrition_counts.get('이탈', 0) / total_count) * 100
         
-        fig = go.Figure(data=[go.Pie(labels=attrition_counts.index, values=attrition_counts.values, hole=.4)])
-        fig.update_traces(hoverinfo='label+percent', textinfo='value+label', textfont_size=20,
-                          marker=dict(colors=['skyblue', 'salmon'], line=dict(color='#000000', width=2)))
-        fig.update_layout(title_text=title, annotations=[dict(text=f'{attrition_counts["이탈"]/len(self.df):.1%}<br>이탈', x=0.5, y=0.5, font_size=30, showarrow=False)], font_family=font_name)
+        fig = go.Figure(data=[go.Pie(labels=attrition_counts.index, values=attrition_counts.values, hole=.4,
+                                     marker=dict(colors=['skyblue', 'salmon'], line=dict(color='#000000', width=2)))])
+        fig.update_traces(hoverinfo='label+percent', textinfo='value+label', textfont_size=20)
+        fig.update_layout(
+            title_text=title, 
+            annotations=[dict(text=f'{attrition_rate:.1f}%<br>이탈', x=0.5, y=0.5, font_size=30, showarrow=False)],
+            font_family=font_name,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
         fig.write_image(os.path.join(self.img_dir, fig_name))
 
-        obs = f"- 분석 대상인 근속 3년 이하 Sales 직원 총 {len(self.df)}명 중, {attrition_counts['이탈']}명이 이탈하여 **{attrition_counts['이탈']/len(self.df):.1%}**의 높은 이탈률을 기록했습니다."
+        obs = f"- 분석 대상인 근속 3년 이하 Sales 직원 총 {total_count}명 중, {attrition_counts.get('이탈', 0)}명이 이탈하여 **{attrition_rate:.1f}%**의 높은 이탈률을 기록했습니다."
         insight = "3명 중 1명 이상이 3년을 채우지 못하고 퇴사하는 상황은, 신규 인력의 안정적인 조직 적응 및 성장에 심각한 문제가 있음을 의미합니다. 이는 채용 및 교육에 투입된 막대한 비용 손실로 직결됩니다."
         action = "- **(경영진) 본 분석 결과를 심각한 경영 문제로 인식하고, 이탈률 개선을 전사적인 핵심 성과 지표(KPI)로 설정하여 관리합니다.**"
         return title, obs, insight, action, fig_name
@@ -335,6 +406,9 @@ def main():
     IMG_DIR_V2 = "3y_sales_hr/images_v2"
     REPORT_FILE_V2 = "3y_sales_hr/HR_Sales_Attrition_Report_v2.md"
 
+    # 이미지 저장 디렉토리 생성
+    os.makedirs(IMG_DIR_V2, exist_ok=True)
+
     try:
         df_raw = pd.read_csv("3y_sales_hr/HR-Employee-Attrition.csv")
     except FileNotFoundError:
@@ -343,9 +417,7 @@ def main():
 
     df = df_raw[(df_raw['Department'] == 'Sales') & (df_raw['YearsAtCompany'] <= 3)].copy()
     df['Attrition_Kor'] = df['Attrition'].apply(lambda x: '이탈' if x == 'Yes' else '잔류')
-
-    # Fix for seaborn catplot issue by creating a figure first
-    plt.figure()
+    df['Attrition_Num'] = df['Attrition'].apply(lambda x: 1 if x == 'Yes' else 0)
 
     # Generate Report
     reporter = ReportGenerator(df, IMG_DIR_V2, REPORT_FILE_V2)
