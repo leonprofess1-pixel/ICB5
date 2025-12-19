@@ -197,37 +197,51 @@ def show_lifecycle_analysis(df):
             # Sankey Diagram 데이터 준비
             df_sankey = high_perf_leavers.groupby(['YearsSinceLastPromotion', 'JobSatisfaction', 'Attrition_Kor']).size().reset_index(name='count')
             
-            # 레이블 리스트 생성
-            labels = []
-            labels.extend(df_sankey['YearsSinceLastPromotion'].apply(lambda x: f"승진정체 {x}년").unique())
-            labels.extend(df_sankey['JobSatisfaction'].apply(lambda x: f"만족도 {x}").unique())
-            labels.extend(df_sankey['Attrition_Kor'].unique())
-            
-            label_map = {label: i for i, label in enumerate(labels)}
+            if df_sankey.empty:
+                st.warning("Sankey 다이어그램을 생성할 데이터가 부족합니다.")
+            else:
+                # 레이블 리스트 생성
+                promotion_nodes = [f"승진정체 {x}년" for x in sorted(df_sankey['YearsSinceLastPromotion'].unique())]
+                satisfaction_nodes = [f"만족도 {x}" for x in sorted(df_sankey['JobSatisfaction'].unique())]
+                attrition_nodes = sorted(list(df_sankey['Attrition_Kor'].unique()))
 
-            # 소스, 타겟, 값 리스트 생성
-            source = []
-            target = []
-            value = []
+                labels = promotion_nodes + satisfaction_nodes + attrition_nodes
+                label_map = {label: i for i, label in enumerate(labels)}
 
-            # Promotion -> Satisfaction
-            for _, row in df_sankey.groupby(['YearsSinceLastPromotion', 'JobSatisfaction']).agg({'count': 'sum'}).reset_index().iterrows():
-                source.append(label_map[f"승진정체 {row['YearsSinceLastPromotion']}"])
-                target.append(label_map[f"만족도 {row['JobSatisfaction']}"])
-                value.append(row['count'])
+                source = []
+                target = []
+                value = []
 
-            # Satisfaction -> Attrition
-            for _, row in df_sankey.iterrows():
-                source.append(label_map[f"만족도 {row['JobSatisfaction']}"])
-                target.append(label_map[row['Attrition_Kor']])
-                value.append(row['count'])
-            
-            fig = go.Figure(data=[go.Sankey(
-                node=dict(pad=15, thickness=20, line=dict(color="black", width=0.5), label=labels),
-                link=dict(source=source, target=target, value=value)
-            )])
-            fig.update_layout(title_text="최고 성과(Outstanding) 직원의 이탈 경로", font_size=12)
-            st.plotly_chart(fig, width='stretch')
+                # 1. Links from Promotion -> Satisfaction
+                df_promo_to_sat = df_sankey.groupby(['YearsSinceLastPromotion', 'JobSatisfaction'])['count'].sum().reset_index()
+                for _, row in df_promo_to_sat.iterrows():
+                    source_node = f"승진정체 {row['YearsSinceLastPromotion']}년"
+                    target_node = f"만족도 {row['JobSatisfaction']}"
+                    if source_node in label_map and target_node in label_map:
+                        source.append(label_map[source_node])
+                        target.append(label_map[target_node])
+                        value.append(row['count'])
+
+                # 2. Links from Satisfaction -> Attrition
+                df_sat_to_attr = df_sankey.groupby(['JobSatisfaction', 'Attrition_Kor'])['count'].sum().reset_index()
+                for _, row in df_sat_to_attr.iterrows():
+                    source_node = f"만족도 {row['JobSatisfaction']}"
+                    target_node = row['Attrition_Kor']
+                    if source_node in label_map and target_node in label_map:
+                        source.append(label_map[source_node])
+                        target.append(label_map[target_node])
+                        value.append(row['count'])
+                
+                if source:
+                    fig = go.Figure(data=[go.Sankey(
+                        node=dict(pad=15, thickness=20, line=dict(color="black", width=0.5), label=labels),
+                        link=dict(source=source, target=target, value=value)
+                    )])
+                    fig.update_layout(title_text="최고 성과(Outstanding) 직원의 이탈 경로", font_size=12)
+                    st.plotly_chart(fig, width='stretch')
+                else:
+                    st.warning("Sankey 다이어그램 링크를 생성할 수 없습니다.")
+
             st.markdown("**💡 진단**: '최고 성과자' 중 **'승진 못한 지 1년 이상'된 그룹의 80%가 '낮은 직무 만족도'를 보이며, 이들 중 대부분이 결국 '이탈'로 이어지는 명확한 경로**가 확인됩니다.")
             st.markdown("**👉 액션플랜**: HR 시스템 내에 **'고성과자 승진 정체 알림(Stagnation Alert)'** 기능을 개발해야 합니다. 최고 등급 성과자가 18개월 이상 승진하지 못할 경우, 담당 HRBP와 임원에게 자동 알림이 가고, 해당 직원에 대한 의무적인 커리어 개발 면담을 진행해야 합니다.")
         else:
