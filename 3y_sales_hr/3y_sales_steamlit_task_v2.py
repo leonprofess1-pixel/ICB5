@@ -178,7 +178,7 @@ def show_lifecycle_analysis(df):
                      color_discrete_map=color_map, category_orders={"PerformanceRating_Kor": ["Good", "Excellent", "Outstanding"]})
         st.plotly_chart(fig, width='stretch')
         st.markdown("**💡 진단**: 최고 성과(Outstanding)를 내는 직원의 월 소득 중앙값이, 바로 아래 등급(Excellent)과 큰 차이가 없습니다. **절대적인 소득 수준 자체가 고성과에 대한 기대치를 충족시키지 못하고 있습니다.**")
-        st.markdown("**👉 액션플랜**: 연봉 인상률だけでなく, 고성과자 그룹의 **기본 연봉 테이블(Salary Band) 자체를 시장 최상위 수준으로 재설계**하여, 업계 최고 대우를 보장해야 합니다.")
+        st.markdown("**👉 액션플랜**: 연봉 인상률뿐만 아니라, 고성과자 그룹의 **기본 연봉 테이블(Salary Band) 자체를 시장 최상위 수준으로 재설계**하여, 업계 최고 대우를 보장해야 합니다.")
 
     with tabs[2]:
         st.subheader("성과와 소진의 악순환 (Performance-Burnout Cycle)")
