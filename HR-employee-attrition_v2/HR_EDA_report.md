@@ -1,4 +1,4 @@
-# HR 직원 퇴사 현황 심층 분석 및 전략적 제언
+# 전체 직원 퇴사 현황 심층 분석 및 전략적 제언
 
 **Date:** 2025-12-20
 **Author:** Gemini (Data Analytics Division)
