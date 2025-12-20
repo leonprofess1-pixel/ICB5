@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR 직원 퇴사 분석: 핵심 인사이트</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+        :root {
+            --bg-color: #121212;
+            --slide-bg-color: #1e1e1e;
+            --font-color: #e0e0e0;
+            --primary-color: #4CAF50;
+            --title-font-color: #ffffff;
+            --header-font-size: 2.5rem;
+            --content-font-size: 1.2rem;
+            --slide-padding: 4rem;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--font-color);
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .presentation-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: var(--slide-padding);
+            background-color: var(--slide-bg-color);
+            border: 1px solid #333;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s ease-in-out, visibility 0.6s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .slide-title {
+            color: var(--primary-color);
+            font-size: var(--header-font-size);
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+        
+        .slide-content {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 90%;
+            height: 70%;
+            gap: 2rem;
+        }
+        
+        .slide-content .image-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .slide-content img {
+            max-width: 100%;
+            max-height: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .slide-content .text-container {
+            flex: 1;
+            text-align: left;
+        }
+        
+        .text-container h3 {
+            color: var(--primary-color);
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+        }
+
+        .text-container ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .text-container li {
+            font-size: var(--content-font-size);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            background-color: rgba(255,255,255,0.05);
+            padding: 1rem;
+            border-radius: 5px;
+        }
+        
+        .title-slide {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .title-slide h1 {
+            font-size: 4rem;
+            color: var(--title-font-color);
+            margin-bottom: 1rem;
+        }
+        
+        .title-slide h2 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--font-color);
+        }
+        
+        .title-slide p {
+             margin-top: 3rem;
+             color: #aaa;
+        }
+
+        .conclusion-slide ul {
+             list-style-type: disc;
+             padding-left: 2rem;
+        }
+
+        .conclusion-slide li {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .slide-counter {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 1rem;
+            color: #888;
+        }
+
+        .nav-button {
+            position: fixed;
+            bottom: 20px;
+            background-color: var(--primary-color);
+            color: var(--title-font-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            z-index: 1000;
+        }
+
+        .nav-button:hover {
+            background-color: #388E3C; /* Darker shade of primary color */
+        }
+
+        .nav-button.prev {
+            left: 20px;
+        }
+
+        .nav-button.next {
+            right: 100px; /* Adjust if slide-counter is too close */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="presentation-container">
+        
+        <!-- Slide 1: Title -->
+        <div class="slide title-slide active">
+            <h1>HR 직원 퇴사 분석</h1>
+            <h2>핵심 인사이트 및 데이터 기반 제언</h2>
+            <p>분석 담당자: Gemini | 최종 업데이트: 2025-12-20</p>
+        </div>
+
+        <!-- Slide 2: Chart 1 -->
+        <div class="slide">
+            <h2 class="slide-title">1. 총 근무 연수: 경력 초기에 높은 퇴사율</h2>
+            <div class="slide-content">
+                <div class="image-container">
+                    <img src="./images/1_working_years_stacked_area.png" alt="총 근무 연수별 누적 직원 수">
+                </div>
+                <div class="text-container">
+                    <h3>핵심 관찰</h3>
+                    <ul>
+                        <li>퇴사자의 증가는 근무 <strong>초기(1~7년차)</strong>에 집중되어 있으며, 특정 시점 이후 매우 완만해집니다.</li>
+                        <li>이는 신입 및 저연차 직원의 이탈 관리가 중요함을 시사합니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 3: Chart 2 -->
+        <div class="slide">
+            <h2 class="slide-title">2. 소득과 경력: 낮게 형성된 퇴사자 그룹</h2>
+            <div class="slide-content">
+                <div class="image-container">
+                    <img src="./images/2_income_vs_working_years_scatter.png" alt="월 소득과 총 근무 연수의 관계">
+                </div>
+                <div class="text-container">
+                    <h3>핵심 관찰</h3>
+                    <ul>
+                        <li>퇴사자 그룹은 <strong>낮은 소득과 짧은 근무 연수</strong> 구간에 집중 분포합니다.</li>
+                        <li>동일 경력 대비 낮은 소득을 받는 것이 퇴사의 주요 동인일 가능성을 보여줍니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Chart 3 -->
+        <div class="slide">
+            <h2 class="slide-title">3. 연령 분포: 20-30대 중심의 퇴사</h2>
+            <div class="slide-content">
+                <div class="image-container">
+                    <img src="./images/3_age_distribution_histogram.png" alt="연령 분포">
+                </div>
+                <div class="text-container">
+                    <h3>핵심 관찰</h3>
+                    <ul>
+                        <li><strong>20대 후반 ~ 30대 초반</strong>의 젊은 연령층에서 퇴사율이 가장 높게 나타납니다.</li>
+                        <li>조직의 미래를 이끌어갈 핵심 실무진의 이탈이 심각함을 의미합니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Chart 4 -->
+        <div class="slide">
+            <h2 class="slide-title">4. 직무 만족도: 만족해도 떠난다</h2>
+            <div class="slide-content">
+                <div class="image-container">
+                    <img src="./images/4_job_satisfaction_stacked_bar.png" alt="직무 만족도와 퇴사 여부">
+                </div>
+                <div class="text-container">
+                    <h3>핵심 관찰</h3>
+                    <ul>
+                        <li>직무 만족도가 '높음'인 그룹에서도 상당수의 퇴사자가 발생합니다.</li>
+                        <li>이는 만족도 외 <strong>보상, 성장 기회 등</strong> 다른 요인이 퇴사 결정에 더 큰 영향을 미칠 수 있음을 시사합니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Chart 5 -->
+        <div class="slide">
+            <h2 class="slide-title">5. 주요 변수 상관관계: 소득과 경력이 퇴사에 미치는 영향</h2>
+            <div class="slide-content">
+                <div class="image-container">
+                    <img src="./images/5_correlation_heatmap.png" alt="수치형 변수 간 상관관계">
+                </div>
+                <div class="text-container">
+                    <h3>핵심 관찰</h3>
+                    <ul>
+                        <li>퇴사(Attrition)는 <strong>소득, 직급, 총 근무 연수, 현 회사 근속 연수</strong>와 뚜렷한 음의 상관관계를 보입니다.</li>
+                        <li>즉, 소득/직급이 낮고 근속이 짧을수록 퇴사율이 높아지는 경향이 통계적으로 확인됩니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Chart 6 -->
+        <div class="slide">
+            <h2 class="slide-title">6. 결혼 상태: 미혼 직원의 높은 퇴사율</h2>
+            <div class="slide-content">
+                <div class="image-container">
+                    <img src="./images/6_marital_status_donut.png" alt="퇴사자의 결혼 상태 분포">
+                </div>
+                <div class="text-container">
+                    <h3>핵심 관찰</h3>
+                    <ul>
+                        <li>퇴사자 중 <strong>미혼(Single)</strong>의 비율이 약 50%로 절반을 차지합니다.</li>
+                        <li>기혼 직원에 비해 상대적으로 이직에 대한 부담이 적은 것이 원인일 수 있습니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Chart 7 -->
+        <div class="slide">
+            <h2 class="slide-title">7. 연령별 소득 격차: 유지되는 차이</h2>
+            <div class="slide-content">
+                <div class="image-container">
+                    <img src="./images/7_avg_income_by_age_line.png" alt="연령대별 평균 월 소득">
+                </div>
+                <div class="text-container">
+                    <h3>핵심 관찰</h3>
+                    <ul>
+                        <li>전 연령대에서 <strong>퇴사자 그룹의 평균 소득이 비퇴사자 그룹보다 낮게</strong> 형성되어 있습니다.</li>
+                        <li>연차가 쌓여도 소득 격차가 좁혀지지 않는 구조가 지속적인 퇴사 동기로 작용할 수 있습니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 9: Chart 8 -->
+        <div class="slide">
+            <h2 class="slide-title">8. 교육 분야: 특정 분야 인력의 잦은 이탈</h2>
+            <div class="slide-content">
+                <div class="image-container">
+                    <img src="./images/8_education_field_hbar.png" alt="퇴사자의 교육 분야 분포">
+                </div>
+                <div class="text-container">
+                    <h3>핵심 관찰</h3>
+                    <ul>
+                        <li>'Life Sciences'와 'Medical' 전공자의 퇴사가 가장 빈번합니다.</li>
+                        <li>이는 해당 분야의 외부 이직 시장이 활발하거나, 회사 내 처우가 시장 기대에 미치지 못할 가능성을 암시합니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Chart 9 -->
+        <div class="slide">
+            <h2 class="slide-title">9. 직급과 환경 만족도: 저직급 & 불만족 시 높은 퇴사율</h2>
+            <div class="slide-content">
+                <div class="image-container">
+                    <img src="./images/9_joblevel_envsatisfaction_attrition_clustered_bar.png" alt="직급 및 환경 만족도별 퇴사율">
+                </div>
+                <div class="text-container">
+                    <h3>핵심 관찰</h3>
+                    <ul>
+                        <li><strong>낮은 직급(Level 1) & 낮은 환경 만족도(Level 1)</strong> 그룹의 퇴사율이 40% 이상으로 가장 높습니다.</li>
+                        <li>직급과 환경 만족도는 퇴사율에 복합적으로 작용하는 핵심 변수임을 알 수 있습니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Chart 10 -->
+        <div class="slide">
+            <h2 class="slide-title">10. 직무별 소득: 일부 직무의 뚜렷한 소득 차이</h2>
+            <div class="slide-content">
+                <div class="image-container">
+                    <img src="./images/10_jobrole_income_boxplot.png" alt="직무 역할, 퇴사 여부에 따른 월 소득 분포">
+                </div>
+                <div class="text-container">
+                    <h3>핵심 관찰</h3>
+                    <ul>
+                        <li>대부분의 직무에서 퇴사자 그룹의 소득 중앙값이 비퇴사자 그룹보다 낮습니다.</li>
+                        <li>특히 <strong>'Sales Representative', 'Laboratory Technician'</strong> 등 특정 직무에서 소득 격차가 두드러집니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 12: Conclusion -->
+        <div class="slide conclusion-slide">
+            <h1 class="slide-title">결론 및 제언</h1>
+            <div class="text-container" style="width: 80%; text-align: left;">
+                <ul>
+                    <li><strong>핵심 요약:</strong> 퇴사는 주로 <strong>'저연차·저연령·미혼'</strong> 직원 그룹에서 발생하며, <strong>'낮은 보상(소득/직급)'</strong>이 핵심 동인으로 작용합니다. 직무나 환경에 대한 만족도만으로는 퇴사를 막기 어렵습니다.</li>
+                    <br>
+                    <li><strong>데이터 기반 제언:</strong>
+                        <ul style="margin-top: 1rem;">
+                            <li><strong>단기:</strong> 'Sales Rep.', 'Lab Technician' 등 퇴사율이 높고 소득 격차가 큰 직무의 보상 테이블을 시장 상황에 맞게 재검토 및 상향 조정.</li>
+                            <li><strong>중장기:</strong> 저연차(1~5년차) 직원 대상의 맞춤형 경력 개발 경로(CDP)를 제시하고, 성과에 따른 빠른 성장(Fast-track) 및 보상 시스템을 강화하여 장기적인 동기를 부여.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="slide-counter"></div>
+    <button class="nav-button prev">이전</button>
+    <button class="nav-button next">다음</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const slideCounter = document.querySelector('.slide-counter');
+            const prevButton = document.querySelector('.nav-button.prev');
+            const nextButton = document.querySelector('.nav-button.next');
+            let currentSlide = 0;
+
+            function showSlide(index) {
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === index);
+                });
+                currentSlide = index;
+                updateCounter();
+            }
+            
+            function updateCounter() {
+                slideCounter.textContent = `${currentSlide + 1} / ${slides.length}`;
+            }
+
+            function nextSlide() {
+                const next = (currentSlide + 1) % slides.length;
+                showSlide(next);
+            }
+
+            function prevSlide() {
+                const prev = (currentSlide - 1 + slides.length) % slides.length;
+                showSlide(prev);
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === ' ') {
+                    nextSlide();
+                } else if (e.key === 'ArrowLeft') {
+                    prevSlide();
+                }
+            });
+
+            prevButton.addEventListener('click', prevSlide);
+            nextButton.addEventListener('click', nextSlide);
+
+            showSlide(0);
+        });
+    </script>
+</body>
+</html>
