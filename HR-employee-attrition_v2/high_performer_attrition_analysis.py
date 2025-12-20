@@ -10,32 +10,44 @@ warnings.filterwarnings('ignore')
 
 # 한글 폰트 설정
 def setup_korean_font():
-    """운영체제에 맞는 한글 폰트를 설정합니다."""
-    font_list = fm.findSystemFonts()
-    korean_font = None
+    """
+    시스템에 설치된 한글 폰트를 찾아 Matplotlib의 기본 폰트로 설정합니다.
+    맑은 고딕, 나눔고딕, AppleGothic 순으로 탐색합니다.
+    """
+    # 폰트 캐시 재생성
+    try:
+        fm._rebuild()
+    except Exception:
+        # 이 과정에서 오류가 발생해도 진행합니다.
+        pass
 
-    if os.name == 'posix':
-        for font in font_list:
-            if 'AppleSDGothicNeo' in font or 'NanumGothic' in font:
-                korean_font = os.path.basename(font).split('.')[0]
-                break
-        if not korean_font:
-             for font in font_list:
-                if 'Malgun' in font:
-                    korean_font = os.path.basename(font).split('.')[0]
-                    break
-    elif os.name == 'nt':
-        for font in font_list:
-            if 'malgun' in font.lower():
-                korean_font = os.path.basename(font).split('.')[0]
-                break
+    font_path = None
     
-    if korean_font:
-        plt.rcParams['font.family'] = korean_font
+    if os.name == 'nt':  # Windows
+        font_candidates = ['malgun.ttf', 'NanumGothic.ttf']
+        font_dir = 'C:/Windows/Fonts'
+        for font in font_candidates:
+            if os.path.exists(os.path.join(font_dir, font)):
+                font_path = os.path.join(font_dir, font)
+                break
+    elif os.name == 'posix':  # MacOS
+        font_candidates = ['AppleGothic', 'NanumGothic']
+        for font in font_candidates:
+            try:
+                font_path = fm.findfont(fm.FontProperties(family=font))
+                break
+            except ValueError:
+                continue
+    
+    if font_path:
+        font_prop = fm.FontProperties(fname=font_path)
+        font_name = font_prop.get_name()
+        plt.rcParams['font.family'] = font_name
+        print(f"✅ 한글 폰트 '{font_name}' 설정이 완료되었습니다.")
     else:
-        print("경고: 적절한 한글 폰트를 찾지 못했습니다. 일부 텍스트가 깨져 보일 수 있습니다.")
-    
-    plt.rcParams['axes.unicode_minus'] = False
+        print("⚠️ 경고: 시스템에서 사용 가능한 한글 폰트(맑은 고딕, 나눔고딕 등)를 찾지 못했습니다. 글자가 깨질 수 있습니다.")
+
+    plt.rcParams['axes.unicode_minus'] = False # 마이너스 기호 깨짐 방지
 
 setup_korean_font()
 
@@ -74,7 +86,7 @@ for i, s in enumerate(satisfaction_order):
 
 plt.xlabel('직급 (Job Level)', fontsize=12)
 plt.ylabel('이직자 수', fontsize=12)
-plt.title('고성과자 직급 및 직무 만족도별 이직자 수', fontsize=16)
+plt.title('고성과자 직급 및 직무 만족도별 이직자 수', fontsize=16, pad=20)
 plt.xticks(x, job_level_order)
 plt.legend(title='직무 만족도')
 plt.grid(axis='y', linestyle='--', alpha=0.7)
@@ -88,7 +100,7 @@ job_role_attrition_sorted = job_role_attrition.sort_values('Yes', ascending=Fals
 job_role_attrition_sorted.plot(kind='barh', stacked=True, figsize=(12, 8), colormap='coolwarm_r')
 plt.xlabel('직원 수', fontsize=12)
 plt.ylabel('직무 (Job Role)', fontsize=12)
-plt.title('고성과자 직무별 이직/잔류 현황', fontsize=16)
+plt.title('고성과자 직무별 이직/잔류 현황', fontsize=16, pad=20)
 plt.legend(title='이직 여부', labels=['잔류', '이직'])
 plt.tight_layout()
 plt.savefig(os.path.join(output_dir, '2_stacked_bar_jobrole_attrition.png'))
@@ -97,25 +109,29 @@ plt.close()
 # --- 3. Box Plot: 고성과자 이직 여부에 따른 월 수입 분포 (직무별) ---
 plt.figure(figsize=(18, 10))
 sorted_roles = hp_attrition_yes.groupby('JobRole')['MonthlyIncome'].median().sort_values(ascending=False).index
-data_to_plot = []
-for role in sorted_roles:
-    data_to_plot.append(hp_df[(hp_df['JobRole'] == role) & (hp_df['Attrition'] == 'Yes')]['MonthlyIncome'])
-    data_to_plot.append(hp_df[(hp_df['JobRole'] == role) & (hp_df['Attrition'] == 'No')]['MonthlyIncome'])
+data_to_plot_yes = [hp_df[(hp_df['JobRole'] == role) & (hp_df['Attrition'] == 'Yes')]['MonthlyIncome'] for role in sorted_roles]
+data_to_plot_no = [hp_df[(hp_df['JobRole'] == role) & (hp_df['Attrition'] == 'No')]['MonthlyIncome'] for role in sorted_roles]
 
-bp = plt.boxplot(data_to_plot, patch_artist=True, vert=True)
-plt.xlabel('직무 (Job Role)', fontsize=12)
+positions_yes = np.array(range(len(sorted_roles))) * 2.5 - 0.4
+positions_no = np.array(range(len(sorted_roles))) * 2.5 + 0.4
+
+bp_yes = plt.boxplot(data_to_plot_yes, positions=positions_yes, sym='', widths=0.6, patch_artist=True)
+bp_no = plt.boxplot(data_to_plot_no, positions=positions_no, sym='', widths=0.6, patch_artist=True)
+
+for element in ['boxes', 'whiskers', 'caps', 'medians']:
+    plt.setp(bp_yes[element], color='#D7191C')
+    plt.setp(bp_no[element], color='#2C7BB6')
+for patch in bp_yes['boxes']:
+    patch.set_facecolor('#FDAE61')
+for patch in bp_no['boxes']:
+    patch.set_facecolor('#ABD9E9')
+
 plt.ylabel('월 수입 (Monthly Income)', fontsize=12)
-plt.title('고성과자 직무별/이직여부에 따른 월 수입 분포', fontsize=16)
-xtick_labels = [f'{role}\n(이직)' for role in sorted_roles] + [f'{role}\n(잔류)' for role in sorted_roles]
-plt.xticks(np.arange(1, len(xtick_labels) + 1), [f'{role}\n({attr})' for role in sorted_roles for attr in ['이직', '잔류']], rotation=90)
-
-colors = ['#ff9999', '#66b3ff'] * len(sorted_roles)
-for patch, color in zip(bp['boxes'], colors):
-    patch.set_facecolor(color)
-
+plt.title('고성과자 직무별/이직여부에 따른 월 수입 분포', fontsize=16, pad=20)
+plt.xticks(np.array(range(len(sorted_roles))) * 2.5, sorted_roles, rotation=45, ha='right')
 from matplotlib.lines import Line2D
-legend_elements = [Line2D([0], [0], color='#ff9999', lw=4, label='이직'),
-                   Line2D([0], [0], color='#66b3ff', lw=4, label='잔류')]
+legend_elements = [Line2D([0], [0], color='#D7191C', markerfacecolor='#FDAE61', marker='s', linestyle='None', markersize=10, label='이직'),
+                   Line2D([0], [0], color='#2C7BB6', markerfacecolor='#ABD9E9', marker='s', linestyle='None', markersize=10, label='잔류')]
 plt.legend(handles=legend_elements, title='이직 여부')
 plt.tight_layout()
 plt.savefig(os.path.join(output_dir, '3_boxplot_income_jobrole_attrition.png'))
@@ -128,7 +144,7 @@ plt.scatter(hp_attrition_no['YearsAtCompany'], hp_attrition_no['MonthlyIncome'],
 plt.scatter(hp_attrition_yes['YearsAtCompany'], hp_attrition_yes['MonthlyIncome'], alpha=0.8, label='이직', c='red', marker='x')
 plt.xlabel('총 근속 년수 (Years At Company)', fontsize=12)
 plt.ylabel('월 수입 (Monthly Income)', fontsize=12)
-plt.title('고성과자 총 근속년수와 월 수입의 관계 (이직 여부별)', fontsize=16)
+plt.title('고성과자 총 근속년수와 월 수입의 관계 (이직 여부별)', fontsize=16, pad=20)
 plt.legend()
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.tight_layout()
@@ -142,7 +158,7 @@ plt.pie(overtime_counts, labels=overtime_counts.index, autopct='%1.1f%%', starta
 centre_circle = plt.Circle((0,0),0.70,fc='white')
 fig = plt.gcf()
 fig.gca().add_artist(centre_circle)
-plt.title('고성과 이직자의 초과근무 비율', fontsize=16)
+plt.title('고성과 이직자의 초과근무 비율', fontsize=16, pad=20)
 plt.axis('equal')
 plt.tight_layout()
 plt.savefig(os.path.join(output_dir, '5_donut_overtime_attrition.png'))
@@ -153,7 +169,7 @@ plt.figure(figsize=(10, 6))
 plt.hist(hp_attrition_yes['YearsSinceLastPromotion'], bins=15, color='purple', alpha=0.7)
 plt.xlabel('마지막 승진 후 경과 년수', fontsize=12)
 plt.ylabel('이직자 수', fontsize=12)
-plt.title('고성과 이직자의 마지막 승진 후 경과 년수 분포', fontsize=16)
+plt.title('고성과 이직자의 마지막 승진 후 경과 년수 분포', fontsize=16, pad=20)
 plt.grid(axis='y', linestyle='--', alpha=0.7)
 plt.tight_layout()
 plt.savefig(os.path.join(output_dir, '6_histogram_promotion_attrition.png'))
@@ -168,6 +184,7 @@ corr_matrix = hp_attrition_yes[selected_cols].corr()
 
 fig, ax = plt.subplots(figsize=(12, 10))
 im = ax.imshow(corr_matrix, cmap='coolwarm')
+cbar = ax.figure.colorbar(im, ax=ax)
 ax.set_xticks(np.arange(len(corr_matrix.columns)))
 ax.set_yticks(np.arange(len(corr_matrix.columns)))
 ax.set_xticklabels(corr_matrix.columns)
@@ -176,10 +193,10 @@ plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 
 for i in range(len(corr_matrix.columns)):
     for j in range(len(corr_matrix.columns)):
-        text = ax.text(j, i, f"{corr_matrix.iloc[i, j]:.2f}",
-                       ha="center", va="center", color="w")
+        color = "white" if abs(corr_matrix.iloc[i, j]) > 0.5 else "black"
+        text = ax.text(j, i, f"{corr_matrix.iloc[i, j]:.2f}", ha="center", va="center", color=color)
 
-ax.set_title("고성과 이직자 주요 수치 데이터 상관관계", fontsize=16)
+ax.set_title("고성과 이직자 주요 수치 데이터 상관관계", fontsize=16, pad=20)
 fig.tight_layout()
 plt.savefig(os.path.join(output_dir, '7_heatmap_correlation_attrition.png'))
 plt.close()
@@ -187,18 +204,20 @@ plt.close()
 # --- 8. Horizontal Bar Chart: 이직 여부에 따른 평균 급여 인상률 및 환경 만족도 ---
 avg_metrics = hp_df.groupby('Attrition')[['PercentSalaryHike', 'EnvironmentSatisfaction']].mean()
 fig, ax1 = plt.subplots(figsize=(10, 6))
-avg_metrics['PercentSalaryHike'].plot(kind='barh', ax=ax1, color='skyblue', position=0, width=0.4)
+avg_metrics['PercentSalaryHike'].plot(kind='barh', ax=ax1, color='skyblue', position=0, width=0.4, label='평균 급여 인상률')
 ax1.set_xlabel('평균 급여 인상률 (%)', color='skyblue')
 ax1.tick_params(axis='x', labelcolor='skyblue')
 ax1.set_ylabel('이직 여부')
-ax1.set_yticklabels(['잔류', '이직'])
 
 ax2 = ax1.twiny()
-avg_metrics['EnvironmentSatisfaction'].plot(kind='barh', ax=ax2, color='salmon', position=1, width=0.4)
+avg_metrics['EnvironmentSatisfaction'].plot(kind='barh', ax=ax2, color='salmon', position=1, width=0.4, label='평균 환경 만족도')
 ax2.set_xlabel('평균 업무 환경 만족도', color='salmon')
 ax2.tick_params(axis='x', labelcolor='salmon')
 
-plt.title('고성과자 이직 여부에 따른 평균 급여 인상률 및 환경 만족도', fontsize=15)
+plt.title('고성과자 이직 여부에 따른 평균 급여 인상률 및 환경 만족도', fontsize=16, pad=20)
+ax1.set_yticklabels(['잔류', '이직'])
+ax1.legend(loc='upper left')
+ax2.legend(loc='upper right')
 plt.tight_layout()
 plt.savefig(os.path.join(output_dir, '8_hbar_salaryhike_satisfaction.png'))
 plt.close()
@@ -213,7 +232,7 @@ plt.figure(figsize=(10, 6))
 age_attrition_counts.plot(kind='area', color='lightcoral', alpha=0.6)
 plt.xlabel('연령대', fontsize=12)
 plt.ylabel('이직자 수', fontsize=12)
-plt.title('고성과자 연령대별 이직자 수', fontsize=16)
+plt.title('고성과자 연령대별 이직자 수', fontsize=16, pad=20)
 plt.grid(True, linestyle='--', alpha=0.6)
 plt.tight_layout()
 plt.savefig(os.path.join(output_dir, '9_area_age_attrition.png'))
@@ -223,8 +242,8 @@ plt.close()
 job_role_counts = hp_attrition_yes['JobRole'].value_counts()
 plt.figure(figsize=(12, 8))
 colors = [plt.cm.Spectral(i/float(len(job_role_counts))) for i in range(len(job_role_counts))]
-squarify.plot(sizes=job_role_counts.values, label=job_role_counts.index, alpha=.8, color=colors)
-plt.title('고성과 이직자의 직무 분포', fontsize=16)
+squarify.plot(sizes=job_role_counts.values, label=[f'{l}\n({v})' for l, v in job_role_counts.items()], alpha=.8, color=colors, text_kwargs={'fontsize':10})
+plt.title('고성과 이직자의 직무 분포', fontsize=16, pad=20)
 plt.axis('off')
 plt.tight_layout()
 plt.savefig(os.path.join(output_dir, '10_treemap_jobrole_attrition.png'))
