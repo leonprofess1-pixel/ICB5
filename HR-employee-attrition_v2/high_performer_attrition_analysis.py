@@ -1,17 +1,21 @@
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import seaborn as sns
+
+# --- 1. 데이터 로드 및 전처리 ---
+# 한글 폰트 설정 (Windows 기준)
+# Seaborn을 사용하더라도 matplotlib의 rcParams를 존중하도록 설정
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
+
 
 # Create directory for images if it doesn't exist
 output_dir = 'HR-employee-attrition_v2/images_v3'
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
-
-# --- 1. 데이터 로드 및 전처리 ---
-# 한글 폰트 설정 (Windows 기준)
-plt.rcParams['font.family'] = 'Malgun Gothic'
-plt.rcParams['axes.unicode_minus'] = False
 
 # 데이터 불러오기
 try:
@@ -21,27 +25,19 @@ except FileNotFoundError:
     exit()
 
 # 고성과자 정의 (PerformanceRating == 4)
-# PerformanceRating 분포 확인
-# print(df['PerformanceRating'].value_counts())
 high_performers = df[df['PerformanceRating'] == 4].copy()
 high_performers_attrition_yes = high_performers[high_performers['Attrition'] == 'Yes'].copy()
 
 # --- 2. 시각화 (10종) ---
 
 # Plot 1: Clustered Bar Chart - 직무 레벨과 환경 만족도에 따른 이탈 현황
-# 데이터 집계
+plt.figure(figsize=(14, 8))
 df_agg = high_performers.groupby(['JobLevel', 'EnvironmentSatisfaction', 'Attrition']).size().unstack(fill_value=0)
 if 'Yes' not in df_agg.columns: df_agg['Yes'] = 0
 if 'No' not in df_agg.columns: df_agg['No'] = 0
 df_agg['Total'] = df_agg['Yes'] + df_agg['No']
 df_agg['AttritionRate'] = df_agg['Yes'] / df_agg['Total']
 df_agg = df_agg.reset_index()
-
-# 시각화
-plt.figure(figsize=(14, 8))
-# Using seaborn for ease of creating a clustered bar chart, but without applying its style
-import seaborn as sns
-sns.set_style("whitegrid", {'axes.grid' : False}) # no seaborn style
 sns.barplot(x='JobLevel', y='AttritionRate', hue='EnvironmentSatisfaction', data=df_agg, palette='viridis')
 plt.title('고성과자 직무 레벨 및 환경 만족도별 이탈률', fontsize=16)
 plt.xlabel('직무 레벨', fontsize=12)
@@ -112,7 +108,6 @@ plt.close()
 
 # Plot 7: Heatmap - 숫자형 변수 간 상관관계 (이탈한 고성과자)
 numeric_cols = high_performers_attrition_yes.select_dtypes(include=np.number).columns
-# 변수 너무 많으면 보기 힘드므로 일부 선택
 selected_cols = ['Age', 'MonthlyIncome', 'TotalWorkingYears', 'YearsAtCompany', 'YearsSinceLastPromotion', 'PercentSalaryHike', 'JobLevel', 'JobSatisfaction', 'EnvironmentSatisfaction']
 corr_matrix = high_performers_attrition_yes[selected_cols].corr()
 plt.figure(figsize=(12, 10))
@@ -150,7 +145,6 @@ plt.close()
 # Plot 10: Treemap (using matplotlib bar chart as a substitute) - 이탈 고성과자 직무 분포
 job_role_counts = high_performers_attrition_yes['JobRole'].value_counts()
 plt.figure(figsize=(12, 8))
-# Using a simple bar chart as a substitute for treemap
 job_role_counts.plot(kind='bar', color=plt.cm.viridis(np.linspace(0, 1, len(job_role_counts))))
 plt.title('이탈한 고성과자들의 직무 분포 (Treemap 대체)', fontsize=16)
 plt.xlabel('직무', fontsize=12)
@@ -161,4 +155,4 @@ plt.savefig(f'{output_dir}/10_treemap_jobrole_attrition.png')
 plt.close()
 
 
-print(f"분석 그래프가 {output_dir} 폴더에 10개 저장되었습니다.")
+print(f"분석 그래프가 {output_dir} 폴더에 10개 다시 저장되었습니다.")
