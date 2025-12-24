@@ -55,13 +55,6 @@ MISSION:
 실현시켜주는 회사
 (따옴표는 없애주세요)
 
-#slide3
-I.D. LOOK 핵심가치 공유
-VISION:
-건강한 회사
-그리고
-행복하게 일하는 회사
-(따옴표는 없애주세요)
 
 #slide4
 LUCKY DRAW EVENT 안내
