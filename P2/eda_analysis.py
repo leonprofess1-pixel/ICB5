@@ -29,6 +29,11 @@ try:
     print("\n--- 데이터 샘플 (df.head()) ---")
     print(df.head().to_markdown(numalign="left", stralign="left"))
 
+    print("\n--- 분석 가설 ---")
+    print("가설: 식료품 및 비주류음료와 같이 가중치가 높은 필수 소비재는 물가지수 변동성이 낮고, 물가상승률이 안정적일 것이다.")
+    print("반면, 특정 고변동성 품목군(예: 일부 농산물)은 계절적 요인 등으로 인해 물가지수 변동성과 물가상승률이 높을 것이다.")
+    print("------------------")
+
     # 월별 데이터를 시계열 형태로 변환 (long format)
     # 날짜 관련 컬럼 식별
     date_columns = [col for col in df.columns if '/' in col]
@@ -162,7 +167,25 @@ try:
 
     print(f"'{os.path.join(images_dir, '8_top_10_weighted_items.png')}' 저장 완료.")
 
-    # --- 군집 분석 (Cluster Analysis) ---
+    # 가설 검증을 위한 추가 시각화: 가중치 vs 물가지수 변동성 (표준편차)
+    # '총지수'를 제외한 계정항목별 가중치(평균)와 물가지수 표준편차 집계
+    weight_vs_std_df = df_long[df_long['계정항목'] != '총지수'].groupby('계정항목').agg(
+        평균_가중치=('가중치', 'mean'),
+        물가지수_표준편차=('물가지수', 'std')
+    ).dropna() # 표준편차 계산이 불가능한 항목 제외
+
+    plt.figure(figsize=(12, 8))
+    sns.scatterplot(x='평균_가중치', y='물가지수_표준편차', data=weight_vs_std_df, hue='물가지수_표준편차', size='평균_가중치', sizes=(20, 1000), palette='coolwarm', legend='brief')
+    plt.xscale('log') # 가중치의 분포가 넓으므로 로그 스케일 적용
+    plt.title('계정항목별 평균 가중치와 물가지수 변동성(표준편차) 관계')
+    plt.xlabel('평균 가중치 (로그 스케일)')
+    plt.ylabel('물가지수 표준편차')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(images_dir, '9_weight_vs_std_price_index.png'))
+    plt.close()
+    print(f"'{os.path.join(images_dir, '9_weight_vs_std_price_index.png')}' 저장 완료.")
+    
     # --- 군집 분석 (Cluster Analysis) ---
     from sklearn.preprocessing import StandardScaler
     from sklearn.cluster import KMeans
@@ -171,11 +194,12 @@ try:
     print("\n--- 군집 분석 시작 ---")
 
     # 군집 분석을 위한 데이터 준비
-    # '총지수'를 제외하고 각 계정항목별 평균 물가지수, 표준편차, 평균 물가상승률 계산
+    # '총지수'를 제외하고 각 계정항목별 평균 물가지수, 표준편차, 평균 물가상승률, 평균 가중치 계산
     cluster_df = df_long[df_long['계정항목'] != '총지수'].groupby('계정항목').agg(
         mean_물가지수=('물가지수', 'mean'),
         std_물가지수=('물가지수', 'std'),
-        mean_물가상승률=('물가상승률', 'mean')
+        mean_물가상승률=('물가상승률', 'mean'),
+        평균_가중치=('가중치', 'mean') # 평균 가중치 추가
     )
 
     # 결측치 처리 (물가상승률이나 표준편차 계산이 불가능한 항목 제외)
@@ -207,9 +231,9 @@ try:
     plt.ylabel('WCSS')
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(os.path.join(images_dir, '9_elbow_method.png'))
+    plt.savefig(os.path.join(images_dir, '11_elbow_method.png')) # 파일명 변경
     plt.close()
-    print(f"'{os.path.join(images_dir, '9_elbow_method.png')}' 저장 완료.")
+    print(f"'{os.path.join(images_dir, '11_elbow_method.png')}' 저장 완료.") # 파일명 변경
 
     # 엘보우 플롯을 보고 수동으로 최적 K 결정 (예: 4 또는 3)
     optimal_k = 4 
@@ -225,6 +249,14 @@ try:
                                    columns=cluster_df.columns[:-1]) # 마지막 'cluster' 컬럼 제외
     cluster_centers['count'] = cluster_df['cluster'].value_counts().sort_index()
     print(cluster_centers.to_markdown(numalign="left", stralign="left"))
+
+    print("\n--- 군집별 계정항목 상세 리스팅 ---")
+    for i in range(optimal_k):
+        print(f"\n### 군집 {i} ({cluster_df[cluster_df['cluster'] == i].shape[0]}개 항목)")
+        cluster_items = cluster_df[cluster_df['cluster'] == i]
+        print(cluster_items[['mean_물가지수', 'std_물가지수', 'mean_물가상승률']].describe().to_markdown(numalign="left", stralign="left"))
+        print("\n계정항목 리스트:")
+        print(", ".join(cluster_items.index.tolist()))
 
     # 군집 시각화 (산점도)
     plt.figure(figsize=(10, 8))
