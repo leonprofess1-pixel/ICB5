@@ -81,6 +81,7 @@ Thumbs.db
 *.xls
 *.xlsx
 *.zip
+!P2/data/price112.csv
 
 # Node modules
 node_modules/

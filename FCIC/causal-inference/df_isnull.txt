@@ -1,0 +1,17 @@
+wage         0
+hours        0
+lhwage       0
+IQ           0
+educ         0
+exper        0
+tenure       0
+age          0
+married      0
+black        0
+south        0
+urban        0
+sibs         0
+brthord     83
+meduc       78
+feduc      194
+logwage      0
