@@ -1,0 +1,4 @@
+col_0    count
+married       
+0          100
+1          835

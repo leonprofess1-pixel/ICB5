@@ -1,0 +1,24 @@
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 935 entries, 0 to 934
+Data columns (total 17 columns):
+ #   Column   Non-Null Count  Dtype  
+---  ------   --------------  -----  
+ 0   wage     935 non-null    int64  
+ 1   hours    935 non-null    int64  
+ 2   lhwage   935 non-null    float64
+ 3   IQ       935 non-null    int64  
+ 4   educ     935 non-null    int64  
+ 5   exper    935 non-null    int64  
+ 6   tenure   935 non-null    int64  
+ 7   age      935 non-null    int64  
+ 8   married  935 non-null    int64  
+ 9   black    935 non-null    int64  
+ 10  south    935 non-null    int64  
+ 11  urban    935 non-null    int64  
+ 12  sibs     935 non-null    int64  
+ 13  brthord  852 non-null    float64
+ 14  meduc    857 non-null    float64
+ 15  feduc    741 non-null    float64
+ 16  logwage  935 non-null    float64
+dtypes: float64(5), int64(12)
+memory usage: 124.3 KB

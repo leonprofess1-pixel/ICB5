@@ -1,0 +1,4 @@
+col_0  count
+black       
+0        815
+1        120
