@@ -1,0 +1,8 @@
+{
+  "unit": "order",
+  "revenue_definition": "price + freight_value",
+  "time_base": "order_purchase_timestamp",
+  "geo_representation": "zip_prefix median lat/lng",
+  "generated_at": "2026-01-17T11:41:35.142325",
+  "generated_by": "preprocess.py"
+}
