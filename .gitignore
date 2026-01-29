@@ -88,3 +88,6 @@ node_modules/
 
 # Explicitly unignore EDA report
 !online-retail/EDA_report.md
+
+
+P2/data/raw/processed/preprocessed_data.pkl
